@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    
+    <head>
+        <meta charset="utf-8" />
+        <title>Toolbox</title>
+        <link href="/style.css" rel="stylesheet" type="text/css" />
+        <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+        <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+    </head>
+    
+    <body>
+      <!-- Header -->
+        <header>
+            <div class="container">
+                <div class="logo">
+                    <a href="/">
+                        <img alt="I'm not so good with Photoshop..." height="95" src="/images/logo.png" width="108" />
+                    </a>
+                </div>
+                <!-- Menu -->
+                <nav>
+                    <ul class="menu">
+                        <li> <a href="/Home" class="home">Home</a> 
+                        </li>
+                        <li> <a href="/Whatitsabout.html" class="what-its-about">What it's about</a> 
+                        </li>
+                        <li> <a href="/Coding" class="coding">Coding</a> 
+                        </li>
+                        <li> <a href="/Toolbox" class="toolbox">Toolbox</a> 
+                        </li>
+                        <li> <a href="/Money" class="money">Money</a> 
+                        </li>
+                        <li> <a href="/About.html" class="about-me">About Me</a> 
+                        </li>
+                        <li> <a href="/Contact.html" class="contact-us">Contact</a> 
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+        <!-- Main page body -->
+        <div id="main">
+            <div class="container">
+                <div id="block_ttt" class="block">
+                    <div class="block_inside">
+                      <!-- App block -->
+                        <div id="tttcont">
+                          <!-- Game canvas and Overlay -->
+                            <canvas id="board" width="600" height="600"></canvas>
+                            <div id='formttt'>
+                                <h1>Play</h1>
+                                <div class="fieldContainer" id="loginttt">
+                                    <div class="formRow">
+                                        <div class="label" >
+                                            <label for="name">Name:</label>
+                                        </div>
+                                        <div class="field">
+                                            <input type="text" id="name" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                        </div>
+                        <!-- Chat block -->
+                        <div id="chatbox">
+                            <div id= "userttt">
+                              <div id = "userx"></div>
+                              <div id = "usero"></div>
+                            </div>
+                            <div id = "chat">
+                                <div id="chatmessages">
+                                </div>
+                                <div class="field">
+                                   <input type="text" id="chatinput" />
+                                </div>
+                            </div>
+                            <div id = "ingame">
+                            </div>
+                        </div>
+                        <!-- end of Chat block -->
+                    </div>
+                    <!-- end of App block -->
+                </div>
+            </div>
+        </div>
+        <!-- footer -->
+        <footer>
+            <div class="container">
+                <div>
+                    <p>
+                        <a href="http://jigsaw.w3.org/css-validator/check/referer">
+                            <img style="border:0;width:88px;height:31px" src="http://jigsaw.w3.org/css-validator/images/vcss-blue" alt="CSS Valide !" />
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </footer>
+        <!-- JS -->
+        <script type="text/javascript">
+/*jslint browser:true */
+/* node JSLint: true */
+/*global alert: false, $: false*/
+
+(function($) {
+  "use strict";
+  var soc = io.connect(),
+    name = '';
+  ////////SOCKET EVENTS////////
+
+  // General events //
+  soc.on('connect', function() {
+    console.log('connected');
+  });
+  soc.on('disconnect', function() {
+    console.log('disconnected');
+  });
+  soc.on('error', function(err) {
+    if (err === 'handshake error') {
+      console.log('handshake error', err);
+    } else {
+      console.log('io error', err);
+    }
+  });
+
+  // Game specific events //
+  soc.on('addPlayer', function(player) {
+    // console.log('received addPlayer' + player);
+    game.addPlayer(player);
+  });
+  soc.on('startGame', function(c) {
+    game.startGame(c);
+  });
+  soc.on('move', function(mv) {
+    game.move(mv);
+  });
+  soc.on('endGame', function(id, msg) {
+    game.endGame(id, msg);
+  });
+
+  // Chat specific events // 
+  soc.on('chatmsg', function(message) {
+    // console.log(message);
+    chat.showNew(message);
+  });
+  soc.on('newUser', function(name) {
+    chat.showNew(name);
+  });
+
+
+  ////////DOCUMENT EVENTS////////
+
+  $('#name').keypress(function(event) {
+    if (event.which === 13) { //key enter pressed
+      event.preventDefault();
+      name = $('#name').val();
+      chat.showNew('Welcome,' + name);
+      soc.emit('addUser', name);
+      document.getElementById('loginttt').className = "disappear";
+    }
+  });
+
+  $('#chatinput').keypress(function(event) {
+    if (event.which === 13) { //key enter pressed
+      event.preventDefault();
+      var msg = '<b>' + name + ': </b>' + $('#chatinput').val();
+      if (name){
+      chat.showNew(msg);
+      soc.emit('chatmsg', msg);
+    }else {alert('Please enter your name first!')}
+    }
+  });
+
+  document.getElementById('board').addEventListener('click', function() {
+    game.makeMove();
+  }, false);
+
+
+
+ ////////CHAT OBJECT////////
+  var chat = (function() {
+    var messages = [];
+
+    return {
+      showNew: function(msg) {
+        messages.push(msg);
+        var contents = "<ul>";
+          for (var i = 0, j = messages.length; i < j; i += 1) {
+            contents += "<li>" + messages[i] + "</li>";
+          }
+        contents += "</ul>";
+        console.log(contents);
+    document.getElementById('chatmessages').innerHTML = contents;
+      }
+    };
+  }());
+
+
+  ////////GAME OBJECT////////
+  var game = (function() {
+    //Private vars//
+    var started = false,
+      canvas = document.getElementById('board'),
+      divx = document.getElementById('userx'),
+      divo = document.getElementById('usero'),
+      ctx = canvas.getContext('2d'),
+      p = [],
+      color = '',
+      score = 0,
+
+      //private functions//
+      drawGrid = function() {
+        canvas.width = canvas.width;
+        ctx.moveTo(200, 0);
+        ctx.lineTo(200, 600);
+        ctx.moveTo(400, 0);
+        ctx.lineTo(400, 600);
+        ctx.moveTo(0, 200);
+        ctx.lineTo(600, 200);
+        ctx.moveTo(0, 400);
+        ctx.lineTo(600, 400);
+        ctx.stroke();
+      },
+      findPos = function(obj) {
+        var offsetLeft = 0,
+          offsetTop = 0;
+        if (obj.offsetParent) {
+          while (obj.offsetParent) {
+            obj = obj.offsetParent;
+            offsetLeft += obj.offsetLeft;
+            offsetTop += obj.offsetTop;
+          }
+          return {
+            x: offsetLeft,
+            y: offsetTop
+          };
+        }
+        return undefined;
+      },
+      drawX = function(x, y) {
+        ctx.beginPath();
+        ctx.lineWidth = "5";
+        ctx.strokeStyle = "green";
+        ctx.moveTo(x - 20, y - 20);
+        ctx.lineTo(x + 20, y + 20);
+        ctx.moveTo(x - 20, y + 20);
+        ctx.lineTo(x + 20, y - 20);
+        ctx.stroke();
+      },
+      drawO = function(x, y) {
+        ctx.beginPath();
+        ctx.lineWidth = "5";
+        ctx.strokeStyle = "red";
+        ctx.arc(x, y, 30, 0, 2 * Math.PI);
+        ctx.stroke();
+      },
+      setColor = function(c) {
+        color = c;
+      };
+
+    ////////public members////////
+    return {
+      addPlayer: function(player) {
+        p.push(player);
+      },
+      startGame: function(c) {
+        started = true;
+        divx.innerHTML = p[1].name;
+        divo.innerHTML = p[0].name;
+        setColor(c);
+        document.getElementById('formttt').className = "hidden";
+        drawGrid();
+      },
+      makeMove: function() {
+        var pos = findPos(canvas),
+          //alert(pos.x+' '+pos.y);
+          x = event.pageX - pos.x,
+          y = event.pageY - pos.y;
+        if (started) {
+          var move = {
+            color: color,
+            x: x,
+            y: y
+          };
+          // console.log(move);
+          soc.emit('tryMove', move);
+        }
+      },
+      move: function(mv) {
+        // console.log('almost there');
+        if (mv.color === 'x') {
+          drawX(mv.x, mv.y);
+        } else {
+          drawO(mv.x, mv.y);
+        }
+      },
+      endGame: function(id) {
+
+        switch (id) {
+          case 0:
+            alert('You lose. Glorious.');
+            break;
+          case 1:
+            alert('You win. Be proud!');
+            break;
+          case 2:
+            alert('It\'s a tie. Try again?');
+            break;
+          default:
+            break;
+        }
+        drawGrid();
+      }
+    };
+  }());
+
+}(jQuery));
+        </script>
+    </body>
+
+</html>
