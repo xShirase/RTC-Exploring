@@ -1,5 +1,6 @@
 var fs = require('fs'),
-    http = require('http');
+    http = require('http'),
+    email = require('nodemailer');
 
 
 // This commented bit is enough to get a working app, if used in conjunction with a webserver to serve the static files. Used the workaround below to get a working demo on node.js only. 
@@ -10,18 +11,9 @@ var fs = require('fs'),
 
 //use of a fs and node-static to serve the static files to client
 
-function handler(req, res) {
+function handler(request, response) {
     "use strict";
-        // res.setHeader('Strict-Transport-Security', 'max-age=8640000; includeSubDomains');
-
-        // if (req.headers['x-forwarded-proto'] !== 'https') {
-        //     var url = 'https://' + req.headers.host + '/';
-        //     res.writeHead(301, {
-        //         'location': url
-        //     });
-        //     return res.end('Redirecting to <a href="' + url + '">' + url + '</a>.');
-        // }
-    fileServer.serve(req, res); // this will return the correct file
+    fileServer.serve(request, response); // this will return the correct file
 }
 
 var app = http.createServer(handler),
@@ -90,7 +82,7 @@ var game = (function() {
         ];
 
         //check board for a winner 
-        for (var i = 0; i < 8; i += 1) {
+        for (var i=0; i < 8; i += 1) {
             if (board[win[i][0]] === board[win[i][1]] && board[win[i][0]] === board[win[i][2]] && board[win[i][0]] !== 0) {
                 return true;
             }
@@ -212,15 +204,34 @@ var spliceUser = function(user) {
     }
 };
 
-
+var clients = [];
+var addClient = function(id,roomname,broadcaster) {
+    var client = {
+        id: id,
+        roomName: roomname,
+        isBroadcaster: broadcaster
+    };
+    clients.push(client);
+    return client;
+};
+var spliceClient = function(client) {
+    for (var i = 0; i < users.length; i += 1) {
+        if (client.id === client[i].id) {
+            clients.splice(i, 1);
+            return;
+        }
+    }
+};
 /////////////SOCKET EVENTS//////////////
 iosocks.on('connection', function(soc) {
     "use strict";
     var user = {};
+    var client = {}; //client is for the WebRTC signalling server, user for the rest of the app.
 
     soc.on('disconnect', function() {
         spliceUser(user);
-        game.splicePlayer(user);
+        //game.splicePlayer(user);
+        soc.broadcast.emit('user disconnected');
     });
 
     soc.on('addUser', function(name) {
@@ -234,6 +245,27 @@ iosocks.on('connection', function(soc) {
     soc.on('chatmsg', function(msg) {
         console.log(msg);
         soc.broadcast.emit('chatmsg', msg);
+    });
+    soc.on('message', function(msg) {
+        console.log(msg);
+         soc.broadcast.emit('message', msg);
+    });
+    soc.on('newroom', function(name) {
+        console.log(name);
+        soc.join(name);
+        client = addClient(soc.id,name,true);
+        console.log(clients);
+
+    });
+    soc.on('email', function(msg){
+
+    });
+    soc.on('newcli', function(name) {
+        console.log(name);
+        soc.join(name);
+        client = addClient(soc.id,name,false);
+        console.log(clients);
+
     });
 
 });

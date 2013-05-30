@@ -1,10 +1,11 @@
 {
      "name": "TTT",
      "description": "Exploring browser communication",
-     "version": "1.0.0-16",
+     "version": "1.0.0-31",
      "dependencies": {
           "socket.io": "0.9.13",
-          "node-static": "0.6.x"
+          "node-static": "0.6.x",
+          "nodemailer": "0.4.x"
      },
      "subdomain": "shirase-TTT",
      "scripts": {

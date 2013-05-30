@@ -19,17 +19,13 @@
                 </div>
                 <nav>
                     <ul class="menu">
-                        <li> <a href="/Home" class="home">Home</a> 
+                        <li> <a href="/index.html" class="home">Home</a> 
                         </li>
-                        <li> <a href="/Whatitsabout.html" class="what-its-about">What it's about</a> 
+                        <li> <a href="/about.html" class="what-its-about">What it's about</a> 
                         </li>
-                        <li> <a href="/Coding" class="coding">Coding</a> 
+                        <li> <a href="/toolbox.html" class="toolbox">Toolbox</a> 
                         </li>
-                        <li> <a href="/Toolbox" class="toolbox">Toolbox</a> 
-                        </li>
-                        <li> <a href="/Money" class="money">Money</a> 
-                        </li>
-                        <li> <a href="/About.html" class="about-me">About Me</a> 
+                        <li> <a href="/Aboutme.html" class="about-me">About Me</a> 
                         </li>
                         <li> <a href="/Contact.html" class="contact-us">Contact</a> 
                         </li>
@@ -63,7 +59,7 @@
             <div class="container">
             </div>
         </footer>
-        <script type = "text/javascript" src = "httpss://maps.googleapis.com/maps/api/js?key=AIzaSyAXDWNszcN8r4vEKOeTQcDv27m7PtqoHQM&sensor=false" > </script>
+        <script type = "text/javascript" src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyAXDWNszcN8r4vEKOeTQcDv27m7PtqoHQM&sensor=false" > </script>
     <script type="text/javascript">
     var map,
         marker = '';
@@ -80,16 +76,15 @@
             mapOptions = {
                 streetViewControl: false,
                 center: myLatlng,
-                zoom: 2,
+                zoom: 3,
                 mapTypeId: google.maps.MapTypeId.HYBRID
             };
         map = new google.maps.Map(document.getElementById("mapcanvas"),mapOptions);
         google.maps.event.addListener(map, 'click', function(event) {
-            placeMarker(event.latLng);
             var myLatLng = event.latLng,
                 lat = myLatLng.lat(),
                 lng = myLatLng.lng(),
-                url = 'https://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lng+'&APPID=231293ac6f016962bb118ca7d30bfd4b&callback=?'
+                url = 'http://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lng+'&APPID=231293ac6f016962bb118ca7d30bfd4b&callback=?'
           $.getJSON(url, function(data) {
             console.log(data);
             var wLatLng = data.coord.lat+','+data.coord.lon,
@@ -102,7 +97,9 @@
             $coords.innerHTML = 'Coordinates : '+ wLatLng;
             $city.innerHTML = 'City : '+ city;
             $temp.innerHTML = 'Temperature : '+ temp +'°C';
-            $desc.innerHTML = 'How it looks like : '+desc+'</br><img alt='+desc+' src=https://openweathermap.org/img/w/'+data.weather[0].icon+' />';
+            $desc.innerHTML = 'How it looks like : '+desc+'</br><img alt='+desc+' src=http://openweathermap.org/img/w/'+data.weather[0].icon+' />';
+            var image = 'http://openweathermap.org/img/w/'+data.weather[0].icon
+            placeMarker(event.latLng,image);
 
         });
 
@@ -112,11 +109,11 @@
       }
 
 
-      function placeMarker(location) {
-            delMark();
+      function placeMarker(location,img) {
             marker = new google.maps.Marker({
             position: location,
-            map: map
+            map: map,
+            icon: img
         });
         map.setCenter(location);
       }

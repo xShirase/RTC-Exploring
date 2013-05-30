@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    
+    <head>
+        <meta charset="utf-8" />
+        <title>Toolbox</title>
+        <link href="/style.css" rel="stylesheet" type="text/css" />
+        <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+    </head>
+    
+    <body>
+      <!-- Header -->
+        <header>
+            <div class="container">
+                <div class="logo">
+                    <a href="/">
+                        <img alt="I'm not so good with Photoshop..." height="95" src="/images/logo.png" width="108" />
+                    </a>
+                </div>
+                <!-- Menu -->
+                <nav>
+                    <ul class="menu">
+                        <li> <a href="/index.html" class="home">Home</a> 
+                        </li>
+                        <li> <a href="/about.html" class="what-its-about">What it's about</a> 
+                        </li>
+                        <li> <a href="/toolbox.html" class="toolbox">Toolbox</a> 
+                        </li>
+                        <li> <a href="/Aboutme.html" class="about-me">About Me</a> 
+                        </li>
+                        <li> <a href="/Contact.html" class="contact-us">Contact</a> 
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+        <!-- Main page body -->
+        <div id="main">
+            <div class="container">
+                <div id="block_ttt" class="block">
+                    <div class="block_inside">
+                      <!-- App block -->
+                        <div id="tttcont">
+                          <!-- Game canvas and Overlay -->
+                            <video id="remotevid" autoplay style="width: 600px; height: 480px; border: 1px solid black;"></video>
+                        </div>
+                        <!-- Side block -->
+                        <div id="snapbox">
+                            
+                        </div>
+                        <!-- end of Side block -->
+                    </div>
+                    <!-- end of App block -->
+                </div>
+            </div>
+        </div>
+        <!-- footer -->
+        <footer>
+            <div class="container">
+                <div>
+                    <p>
+                        <a href="http://jigsaw.w3.org/css-validator/check/referer">
+                            <img style="border:0;width:88px;height:31px" src="http://jigsaw.w3.org/css-validator/images/vcss-blue" alt="CSS Valide !" />
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </footer>
+        <!-- JS -->
+        <script src="/adapter.js"></script>
+
+        <script type="text/javascript">
+/*jslint browser:true */
+/* node JSLint: true */
+/*global alert: false, $: false*/
+(function () {
+        "use strict";
+
+        var soc = io.connect();
+        var remotevid = document.getElementById('remotevid');
+        var pc_config = {"iceServers": [{"url": "stun:stun.l.google.com:19302"}]};
+        var pC = null;
+        var localStream = null;
+        var mediaConstraints = {'mandatory': {
+                          'OfferToReceiveAudio':true, 
+                          'OfferToReceiveVideo':true }};
+        var setLocal = function (sdp) {
+            pC.setLocalDescription(sdp);
+            console.log("Sending: SDP");
+            console.log(sdp);
+            soc.json.send(sdp);
+        };
+
+        //initialize video
+
+        function start() {
+
+            soc.emit('newcli', 'testroom');
+           
+        }
+
+        
+        function onRemoteStreamAdded(event) {
+            console.log("Added remote stream" + event);
+            remotevid.src = window.URL.createObjectURL(event.stream);
+            remotevid.play();
+        }
+
+        function createPeerConnection() {
+            console.log("Creating peer connection");
+            pc_config.iceServers.push({
+                "url": "turn:" + 'shirase.dev%40gmail.com' + "@" + 'numb.viagenie.ca',
+                "credential": 'drkllr'
+            });
+
+            try {
+                pC = new RTCPeerConnection(pc_config);
+                console.log("Created peer connection" + pc_config);
+
+            } catch (e) {
+                console.log("Failed to create Peer Connection, exception: " + e.message);
+            }
+            pC.addEventListener("addstream", onRemoteStreamAdded, false);
+            pC.onicecandidate = function(evt) {
+            if (evt.candidate) {
+                console.log('Sending ICE candidate...');
+                console.log(evt.candidate);
+                soc.json.send({
+                        type: "candidate",
+                        sdpMLineIndex: evt.candidate.sdpMLineIndex,
+                        sdpMid: evt.candidate.sdpMid,
+                        candidate: evt.candidate.candidate
+                    });
+            } else {
+                console.log("End of candidates.");
+            }
+        };
+
+       
+        }
+
+        // function onicecandidate(event) {
+        //     if (event.candidate) {
+        //         console.log('Sending ICE candidate...');
+        //         console.log(evt.candidate);
+        //         soc.json.send({
+        //                 type: "candidate",
+        //                 sdpMLineIndex: evt.candidate.sdpMLineIndex,
+        //                 sdpMid: evt.candidate.sdpMid,
+        //                 candidate: evt.candidate.candidate
+        //             });
+        //     } else {
+        //         console.log("End of candidates.");
+        //     }
+        // };
+
+        soc.on('message', function (evt) {
+                if (evt.type === 'offer') {
+                    console.log("Received offer...");
+                    createPeerConnection();
+                    console.log('Creating remote session description...' );
+                    pC.setRemoteDescription(new RTCSessionDescription(evt));
+                    console.log('Sending answer...');
+                    pC.createAnswer(setLocal,null,mediaConstraints);
+
+                } else if (evt.type === 'answer') {
+                    console.log('Received answer...');
+                    console.log('Setting remote session description...' + evt);
+                    pC.setRemoteDescription(new RTCSessionDescription(evt));
+                } else if (evt.type === 'candidate') {
+                    console.log('Received ICE candidate...');
+                    var candidate = new RTCIceCandidate({
+                            sdpMLineIndex: evt.sdpMLineIndex,
+                            sdpMid: evt.sdpMid,
+                            candidate: evt.candidate
+                        });
+                    console.log(candidate);
+                    pC.addIceCandidate(candidate);
+
+                } else if (evt.type === 'bye') {
+                    console.log("Received bye");
+                    stop();
+                }
+            });
+
+        window.onload = start;
+
+    }());
+
+        </script>
+    </body>
+
+</html>

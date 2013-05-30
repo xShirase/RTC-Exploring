@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    
+    <head>
+        <meta charset="utf-8" />
+        <title>Toolbox</title>
+        <link href="/style.css" rel="stylesheet" type="text/css" />
+        <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+        <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+    </head>
+    
+    <body>
+      <!-- Header -->
+        <header>
+            <div class="container">
+                <div class="logo">
+                    <a href="/">
+                        <img alt="I'm not so good with Photoshop..." height="95" src="/images/logo.png" width="108" />
+                    </a>
+                </div>
+                <!-- Menu -->
+                <nav>
+                    <ul class="menu">
+                        <li> <a href="/index.html" class="home">Home</a> 
+                        </li>
+                        <li> <a href="/about.html" class="what-its-about">What it's about</a> 
+                        </li>
+                        <li> <a href="/toolbox.html" class="toolbox">Toolbox</a> 
+                        </li>
+                        <li> <a href="/Aboutme.html" class="about-me">About Me</a> 
+                        </li>
+                        <li> <a href="/Contact.html" class="contact-us">Contact</a> 
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+        <!-- Main page body -->
+        <div id="main">
+            <div class="container">
+                <div id="block_ttt" class="block">
+                    <div class="block_inside">
+                      <!-- App block -->
+                        <div id="tttcont">
+                            <video id="sourcevid" autoplay style="width: 640px; height: 480px; border: 1px solid black;"></video>
+                            
+                        </div>
+                        <!-- Chat block -->
+                        <div id="snapbox">
+                            <canvas id="snap" style="display:none"></canvas>
+                            <img src="" id="pngpic" alt="pngpic" style="display:none">
+                        </div>
+                        <div id="btnspanel">
+                            <button type="button" id="startVideo">Start video</button>
+                            <button type="button" id="stopVideo">Stop video</button>
+                            <button type="button" id="snapVideo">Take .PNG snapshot</button>
+                        </div>
+                    <!-- end of App block -->
+                </div>
+            </div>
+        </div>
+        <!-- footer -->
+        <footer>
+            <div class="container">
+                <div>
+                    <p>
+                        <a href="http://jigsaw.w3.org/css-validator/check/referer">
+                            <img style="border:0;width:88px;height:31px" src="http://jigsaw.w3.org/css-validator/images/vcss-blue" alt="CSS Valide !" />
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </footer>
+        <!-- JS -->
+        <script type="text/javascript">
+(function ($) {
+    "use strict";
+
+
+    function start() {
+        document.getElementById('startVideo').onclick = function () {
+            console.log('start');
+            var sourcevid = document.getElementById('sourcevid');
+            // Replace the source of the video element with the stream from the camera
+            try {
+                navigator.webkitGetUserMedia({
+                    video: true
+                }, successCallback, errorCallback);
+            } catch (e) {
+                navigator.webkitGetUserMedia('video', successCallback, errorCallback);
+            }
+
+            function successCallback(stream) {
+                sourcevid.src = window.webkitURL.createObjectURL(stream);
+            }
+
+            function errorCallback(error) {
+                console.error('An error occurred: [CODE ' + error.code + ']');
+                return;
+            }
+        };
+        document.getElementById('stopVideo').onclick = function () {
+            console.log('stop');
+            sourcevid.src = "";
+        };
+        document.getElementById('snapVideo').onclick = function () {
+            var snap = document.getElementById('snap');
+            snap.width = sourcevid.clientWidth/3;
+            snap.height = sourcevid.clientHeight/3;
+            var c = snap.getContext("2d");
+            c.drawImage(sourcevid, 0, 0, snap.width, snap.height);
+            //snap.style.display="inline"
+            //snap.style.opacity = 1;
+            var data = snap.toDataURL('image/png');
+            pngpic.setAttribute('src', data);
+            pngpic.style.margin="auto"
+            pngpic.style.display="block"
+        }
+    }
+
+
+
+    
+    window.onload = start;
+}(jQuery));
+        </script>
+    </body>
+
+</html>
